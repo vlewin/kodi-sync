@@ -36,4 +36,7 @@ Community Packages (8) /Users/vlewin/.atom/packages
 └── (empty)
 
 ### WIP
+
+Test streams: http://www.sample-videos.com
+
 curl --header 'Content-Type: application/json' --data-binary '{    "jsonrpc": "2.0",    "method": "Player.GetItem","params": {"properties": [ "file"],"playerid":1},"id": "VideoGetItem"}' 'http://192.168.178.23:8080/jsonrpc'
