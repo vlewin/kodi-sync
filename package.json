@@ -1,0 +1,29 @@
+{
+  "name": "kodi-sync",
+  "version": "1.0.0",
+  "description": "Sync currently playing stream across multiple Kodi devices",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "electron",
+    "kodi",
+    "sync",
+    "streaming"
+  ],
+  "author": "Vladislav Lewin",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^1.4.13",
+    "electron-prebuilt": "^1.4.13",
+    "electron-reload": "^1.1.0"
+  },
+  "dependencies": {
+    "bonjour": "^3.5.0",
+    "jquery": "^3.1.1",
+    "node-json-rpc": "0.0.1",
+    "vue": "^2.1.7"
+  }
+}

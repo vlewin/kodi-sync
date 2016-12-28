@@ -1,0 +1,401 @@
+<link rel="stylesheet" href="./css/photon.min.css">
+<link rel="stylesheet" href="./css/application.css">
+
+<div id="app" class="window">
+  <header class="toolbar toolbar-header">
+    <h1 class="title">Kodi Sync</h1>
+
+    <div class="toolbar-actions">
+      <div class="btn-group">
+        <button class="btn btn-default">
+          <span class="icon icon-home"></span>
+        </button>
+        <button class="btn btn-default">
+          <span class="icon icon-folder"></span>
+        </button>
+        <button class="btn btn-default active">
+          <span class="icon icon-cloud"></span>
+        </button>
+      </div>
+
+      <!-- <button class="btn btn-default">
+        <span class="icon icon-home icon-text"></span>
+        Filters
+      </button> -->
+
+      <button class="btn btn-default" v-on:click="scan">
+        <span class="icon icon-target"></span>
+        &nbsp; Rescan
+      </button>
+
+      <button class="btn btn-default btn-default pull-right" v-on:click="quit">
+        <span class="icon icon-cancel"></span>
+      </button>
+
+    </div>
+  </header>
+
+  <div class="window-content">
+    <div class="pane-group">
+      <div class="pane">
+        <ul class="list-group">
+          <li class="list-group-header">
+            Source device
+          </li>
+
+          <li v-if="source" class="list-group-item">
+            <img class="img-circle media-object pull-left" v-bind:src="source.image" width="42" height="42">
+            <div class="media-body">
+              <strong>
+                {{ source.name }} ({{ source.ip }})
+              </strong>
+
+              <div class="btn-group pull-right">
+                <button class="btn btn-mini btn-default" v-bind:class="{ active: showStreamForm }" v-on:click="toggleStreamURLForm">
+                  <span class="icon icon-plus-circled"></span>
+                </button>
+                <button class="btn btn-mini btn-default" v-if="source.playerid" v-on:click="stop"><span class="icon icon-stop"></span></button>
+                <button class="btn btn-mini btn-default" v-on:click="setTarget(source)" v-bind:disabled="!targets.length">
+                  <span class="icon icon-down-circled"></span>
+                </button>
+              </div>
+
+              <p v-if="source.stream">
+                <small>Now playing: {{ source.stream && source.stream.title ? source.stream.title : '---' }}</small>
+              </p>
+
+              <p v-if="source.progress">
+                <progress max="100" v-bind:value="source.progress"></progress>
+              </p>
+
+              <br>
+
+              <div class="form-group pull-left width-100" v-if="showStreamForm">
+                <input type="url" class="form-control" placeholder="Please enter a network URL" v-model="streamURL" required>
+                <div>
+                  <small class="grey">
+                    Validation message ?????
+                    https://css-tricks.com/form-validation-ux-html-css/
+                  </small>
+                </div>
+
+                <br>
+                <div class="form-actions">
+                  <button class="btn btn-form btn-default" v-on:click="closeStreamURLForm">Cancel</button>
+                  <button class="btn btn-form btn-primary" v-on:click="play" v-bind:disabled="!streamURL">
+                    <span class="icon icon-paper-plane white"></span>
+                    &nbsp; Play
+                  </button>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li v-else class="list-group-item">
+            <div class="media-body">
+              <strong><span class="icon icon-info-circled"></span> No source device found.</strong>
+            </div>
+          </li>
+        </ul>
+
+
+        <ul id="#targets" class="list-group">
+          <li class="list-group-header">
+            Target devices
+            <button class="btn btn-mini btn-primary pull-right" v-on:click="refreshAll">
+              <span class="icon icon-arrows-ccw white"></span>&nbsp; Refresh all
+            </button>
+          </li>
+
+          <li class="list-group-item" v-if="!targets.length">
+            <div class="media-body">
+              <!-- <strong>No taget devices found.</strong> -->
+              <strong><span class="icon icon-info-circled"></span> No taget devices found.</strong>
+
+              <br><br>
+
+              <p>
+                <fieldset>
+                  <legend>
+                    &nbsp;
+                    <span class="icon icon-lamp dark-grey"></span>
+                    ProTip:
+                    &nbsp;
+                  </legend>
+
+                  <!-- <a href="http://kodi.wiki/view/Webserver#Enabling_the_webserver" target="_blank">Enable Kodi webserver</a> -->
+                  Check Kodi settings:
+                  <pre><small>"Enable Settings" > "Services" > "Webserver" > "Allow control of Kodi via HTTP"</small></pre>
+
+                  <br>
+
+                  <p>
+                    or try to
+                    <button class="btn btn-mini btn-primary" v-on:click="scan">
+                      <span class="icon icon-target white"></span>&nbsp; Rescan
+                    </button>
+                    the network.
+                  </p>
+                </fieldset>
+                <!-- <small>Now playing: '?????'</small> -->
+              </p>
+
+
+            </div>
+
+          </li>
+
+          <li class="list-group-item" v-bind:class="{ active: device.name === target.name }" v-for="device in targets" v-on:click="setTarget(device)" v-if="targets.length">
+            <img class="img-circle media-object pull-left" v-bind:src="device.image" width="32" height="32">
+            <div class="media-body">
+              <strong>
+                {{ device.name }} ({{ device.ip }})
+                <!-- <button class="btn btn-mini btn-default pull-right" v-on:click="setSource(device)">
+                  <span class="icon icon-up-circled">
+                  Set as source
+                </button> -->
+
+                <div class="btn-group pull-right">
+                  <button class="btn btn-mini btn-default">
+                    <span class="icon icon-pause" v-if="device.playerid"></span>
+                    <span class="icon icon-play" v-else></span>
+                  </button>
+                  <button class="btn btn-mini btn-default" v-if="device.playerid"><span class="icon icon-stop"></span></button>
+                  <button class="btn btn-mini btn-default pull-right" v-on:click="setSource(device)">
+                    <span class="icon icon-up-circled">
+                    Set as source
+                  </button>
+                </div>
+
+
+              </strong>
+              <p>
+                <small>Now playing: {{ isPlaying(device) ? device.stream.title : '---' }}</small>
+              </p>
+            </div>
+          </li>
+        </ul>
+
+        <br>
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="toolbar toolbar-footer">
+    <div class="toolbar-actions">
+      <div v-if="ready">
+        <button class="btn btn-large btn-primary width-100" v-on:click="sync()">
+          <p>Sync "{{ source.name }}" with "{{ target.name }}"</p>
+        </button>
+      </div>
+
+      <!-- <button class="btn btn-primary pull-right">Save</button> -->
+    </div>
+  </footer>
+</div>
+
+<script src="https://vuejs.org/js/vue.js"></script>
+
+<script>
+  const { ipcRenderer } = require('electron')
+  const Vue = require('vue/dist/vue.js')
+  const $ = require('jquery')
+  const rpc = require('node-json-rpc')
+  const bonjour = require('bonjour')()
+  const kodi = require('./scripts/kodi.js')
+
+  Vue.config.silent = false
+
+  var vm = new Vue({
+    el: '#app',
+    data() {
+      return {
+        devices: [],
+        source: null,
+        target: null,
+        streamURL: null,
+        showStreamForm: false
+      }
+    },
+
+    created() {
+      this.scan()
+
+    },
+
+    mounted() {
+      // this.scan()
+      // ipcRenderer.on('asynchronous-reply', (event, arg) => {
+      //   console.log(arg) // prints "pong"
+      // })
+
+      // ipcRenderer.send('asynchronous-message', 'ping')
+    },
+
+    watch: {
+      devices() {
+        this.source = this.devices[0]
+        if(this.devices.length == 2) {
+          this.target = this.devices[1]
+        }
+      },
+
+      source(val) {
+        let _this = this
+        if(!!this.source) {
+          if(this.source.playerid) {
+            kodi.nowPlaying(this.source, function() {
+              _this.sourceDeviceImage()
+            })
+          }
+        }
+      }
+    },
+
+    computed: {
+      targets() {
+        let _this = this
+        return this.devices.filter(function(device) {
+          return device.name != _this.source.name
+        })
+      },
+
+      ready() {
+        return this.source && this.target
+      }
+    },
+
+    methods: {
+      imageExists(url, callback) {
+        var img = new Image();
+        img.onload = function() { callback(true); };
+        img.onerror = function() { callback(false); };
+        img.src = url;
+      },
+
+      sourceDeviceImage() {
+        let _this = this
+
+        if(this.source && this.source.stream) {
+          if(this.source.stream.image) {
+            this.imageExists(this.source.stream.image, function(exists) {
+              if(exists) {
+                _this.source.image = _this.source.stream.image
+              }
+            })
+          }
+        }
+      },
+
+      initClient(service) {
+        return new rpc.Client({
+          host: service.referer.address,
+          port: service.port,
+          path: '/jsonrpc',
+          strict: true
+        })
+      },
+
+      initDevice(service) {
+        return {
+          name: service.name,
+          ip: service.referer.address,
+          port: service.port,
+          image: './images/kodi.png',
+          playerid: null,
+          stream: null,
+          progress: null,
+          client: this.initClient(service)
+        }
+      },
+
+      scan() {
+        let _this = this
+        this.devices = []
+
+        console.log('Scan for kodi devices')
+        bonjour.find({ type: 'http' }, function (service) {
+          // console.log('Found an HTTP server:', JSON.stringify(service))
+          if(service.name.includes('Kodi')) {
+            console.info('Kodi player detected', service.name)
+            let device = _this.initDevice(service)
+            _this.devices.push(device)
+
+            console.log('Get active players for device', device.name)
+            kodi.getActivePlayers(device)
+            kodi.nowPlaying(device, function() {
+              _this.sourceDeviceImage()
+            })
+          }
+        })
+      },
+
+      refresh(device) {
+        let _this = this
+        kodi.getActivePlayers(device)
+        kodi.nowPlaying(device, function() {
+          _this.sourceDeviceImage()
+        })
+      },
+
+      refreshAll() {
+        let _this = this
+        for(let i in this.devices) {
+          let device = this.devices[i]
+          this.refresh(device)
+        }
+      },
+
+      setSource(device) {
+        this.source = device
+        kodi.getActivePlayers(device)
+      },
+
+      setTarget(device) {
+        this.target = device
+
+        if(device.name === this.source.name) {
+          this.source = this.targets[0]
+        }
+      },
+
+      toggleStreamURLForm() {
+        this.showStreamForm = !this.showStreamForm
+      },
+
+      closeStreamURLForm() {
+        this.streamURL = null
+        this.showStreamForm = false
+      },
+
+      isPlaying(device) {
+        return device.playerid && device.stream
+      },
+
+      play() {
+        //TODO: Add loading indicator
+        console.info('Play', this.streamURL)
+        kodi.play(this.source, this.streamURL)
+        this.closeStreamURLForm()
+      },
+
+      stop() {
+        //TODO: Add loading indicator
+        kodi.stop(this.source)
+      },
+
+      sync() {
+        kodi.sync(this.source, this.target)
+        kodi.nowPlaying(this.target)
+      },
+
+      quit() {
+        ipcRenderer.send('quit', 'ping')
+      }
+    }
+  })
+
+
+</script>

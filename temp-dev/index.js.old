@@ -1,0 +1,120 @@
+'use strict';
+
+const {app, Menu, Tray, BrowserWindow} = require('electron');
+require('electron-reload')(__dirname, {
+  electron: require('electron-prebuilt')
+});
+
+const {ipcMain} = require('electron')
+ipcMain.on('asynchronous-message', (event, arg) => {
+  console.log(arg)  // prints "ping"
+  event.sender.send('asynchronous-reply', 'pong')
+})
+
+ipcMain.on('synchronous-message', (event, arg) => {
+  console.log(arg)  // prints "ping"
+  event.returnValue = 'pong'
+})
+
+var rpc = require('node-json-rpc')
+
+ipcMain.on('stream', (event, device, stream) => {
+  let [ip, port] = device.split(':');
+
+  console.log(device, stream, ip, port)  // prints "ping"
+
+  var options = {
+    host: ip,
+    port: port,
+    path: '/jsonrpc',
+    strict: true
+  }
+  var kodi = new rpc.Client(options)
+
+  stream = "http://media.ntv.ru/vod/promo/2016/20161224/0176416_hd_lo.webm?ts=1482783242&md5=IylYrYW_DK1Fc8_kgxQLHg&poLYs3=6%08%0B%0Bqr%0D%10I3"
+  stream = "https://r1---sn-4g5edney.googlevideo.com/videoplayback?mn=sn-4g5edney&mm=31&requiressl=yes&clen=8316720&mime=video%2Fmp4&keepalive=yes&source=youtube&ms=au&mv=m&mt=1482746577&ipbits=0&signature=E18D486051FCBFDE33FB7225C8DA6101DFA4382A.D7EAB668052977253B9582B531143113D55C2840&itag=134&nh=IgpwZjAyLmZyYTE2KhgyMDAxOjQ4NjA6MToxOjA6Y2Y4OjA6Njk&expire=1482768322&dur=130.560&pl=40&key=yt6&gir=yes&sparams=clen%2Cdur%2Cei%2Cgir%2Cid%2Cinitcwndbps%2Cip%2Cipbits%2Citag%2Ckeepalive%2Clmt%2Cmime%2Cmm%2Cmn%2Cms%2Cmv%2Cnh%2Cpl%2Crequiressl%2Csource%2Cupn%2Cexpire&ip=2003%3A86%3A8d27%3A8300%3A153c%3A4132%3Af33a%3A5f0&lmt=1458209288587608&upn=Gcl1xNMMSzA&ei=YetgWLKpOab-iAaLiZewCA&id=o-AEOuRg4xbsBzkRXBD4sCYYPr2_3mioDjyEhJmrRC6xPI&initcwndbps=727500&alr=yes&ratebypass=yes&cpn=44ml2KsmJsT_wMOU&c=WEB&cver=1.20161219&ir=1&rr=12&range=1675857-3644095&rn=10&rbuf=24718"
+  kodi.call(
+    {"jsonrpc":"2.0","id":"1","method":"Player.Open","params":{"item":{"file":stream}}},
+    function (err, res) {
+      if (err) { console.log(err) }
+      else {
+        console.log(res)
+      }
+    }
+  )
+
+  event.returnValue = 'pong'
+})
+
+
+
+
+
+var win = null;
+let tray = null
+let dock = app.dock // Badge works only on Mac
+
+app.on('ready', function() {
+  win = new BrowserWindow({
+    height: 600,
+    width: 800
+  });
+
+  tray = new Tray('./stream-small.png')
+  const contextMenu = Menu.buildFromTemplate([
+    {label: 'Item1', type: 'radio'},
+    {label: 'Item2', type: 'radio'},
+    {label: 'Item3', type: 'radio', checked: true},
+    {label: 'Item4', type: 'radio'}
+  ])
+  tray.setToolTip('This is my application.')
+  tray.setContextMenu(contextMenu)
+
+  win.loadURL(`file://${__dirname}/app/player.html`)
+  win.webContents.openDevTools()
+
+  tray.on('click', () => {
+    console.log('Hide/Show on click')
+    win.isVisible() ? win.hide() : win.show()
+  })
+  win.on('show', () => {
+    tray.setHighlightMode('always')
+  })
+
+  win.on('hide', () => {
+    console.log('Hide')
+    tray.setHighlightMode('never')
+  })
+
+  win.on('minimize', () => {
+    console.log('minimize')
+    onDone()
+  })
+
+  win.on('focus', () => {
+    console.log('Focus')
+    onFocus()
+    onProgress(0.8)
+  })
+
+
+  // When work makes progress, show the progress bar
+  function onProgress (progress) {
+    // Use values 0 to 1, or -1 to hide the progress bar
+    win.setProgressBar(progress || -1) // Progress bar works on all platforms
+  }
+
+  // When work completes while the app is in the background, show a badge
+  var numDoneInBackground = 0
+  function onDone () {
+    if (!dock || win.isFocused()) return
+    numDoneInBackground++
+    dock.setBadge('' + numDoneInBackground)
+  }
+
+  // Subscribe to the window focus event. When that happens, hide the badge
+  function onFocus () {
+    numDoneInBackground = 0
+    dock.setBadge('O')
+  }
+});

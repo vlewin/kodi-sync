@@ -1,0 +1,74 @@
+/* Colors */
+.white {
+  color: #fff !important;
+}
+
+.blue {
+  color: #388df8 !important;
+}
+
+.light-grey {
+  color: #eee !important;
+}
+
+.grey {
+  color: #a0a0a0 !important;
+}
+
+.dark-grey {
+  color: #737475 !important;
+}
+
+.width-100 {
+  width: 100%;
+}
+
+/* Forms */
+input:focus {
+  box-shadow: none !important;
+}
+input:invalid {
+  background-color: #ffdddd;
+}
+
+input:valid {
+  background-color: #ddffdd;
+}
+
+/*input:required {
+  border-color: #800000;
+  border-width: 1px;
+}*/
+
+input:required:invalid {
+  border-color: #C00000;
+}
+
+button:disabled {
+  background: #dddddd;
+  border: 1px solid #c2c0c2;
+  color: #a0a0a0;
+  pointer-events: none;
+}
+
+button:disabled span.icon {
+  color: #a0a0a0 !important;
+}
+
+pre, pre > small {
+  text-overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* Framework overrides */
+li.list-group-header {
+  background-color: #eee;
+}
+
+.img-circle {
+  border: 2px solid #eee
+}
+
+#targets li.active button {
+  color: #333;
+}
