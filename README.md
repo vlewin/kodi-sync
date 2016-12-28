@@ -17,9 +17,9 @@
 - [ ] Win/Mac install with “auto update” support =>  https://github.com/electron-userland/electron-builder
 
 ### Screenshots
-![Alt text](https://github.com/vlewin/electron-tray-player/blob/master/images/Screenshot.png?raw=true "Optional Title")
+![Alt text](https://github.com/vlewin/kodi-sync/raw/master/Screenshot_1.png?raw=true "Optional Title")
 
-![Alt text](https://github.com/vlewin/electron-tray-player/blob/master/images/Screenshot2.png?raw=true "Optional Title")
+![Alt text](https://github.com/vlewin/kodi-sync/raw/master/Screenshot_2.png?raw=true "Optional Title")
 
 ### ATOM Plugins
 ➜  electron-tray-player git:(master) ✗ apm list --installed
