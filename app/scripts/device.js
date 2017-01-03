@@ -62,10 +62,20 @@ class Device {
   static sync(source, target) {
     let file = source.stream.file
     let percentage = source.progress.percentage
-    console.warn('Sync seek', percentage)
+    console.log('Pause source')
     source.pause()
-    target.open(file)
-    target.seek(percentage)
+    console.log('Open file and seek', percentage)
+
+
+    // target.open(file)
+    // setTimeout(function() {
+    //   target.pause()
+    //   target.seek(percentage)
+    // }, 3000)
+
+    target.open(file, function() {
+      target.seek(percentage)
+    })
   }
 
   static errorHandler(error) {
@@ -129,32 +139,45 @@ class Device {
 
         let progress = response.result
         if(progress) {
-          eventHub.emit('PLAYER_PROGRESS', _this, { percentage: progress.percentage.toFixed(1), time: progress.time, totaltime: progress.totaltime })
+          eventHub.emit('PLAYER_PROGRESS', _this, {
+            percentage: Math.round(progress.percentage),
+            time: progress.time,
+            totaltime: progress.totaltime
+          })
         }
       })
     }
   }
 
-  open(stream) {
+  open(stream, callback) {
     let _this = this
     let params = {"jsonrpc":"2.0","id":"1","method":"Player.Open","params":{"item":{"file": stream }}}
 
     this.client.call(params, function (error, response) {
       _this.constructor.errorHandler(error || response.error)
       eventHub.emit('PLAYER_OPEN', _this)
+
+      if(callback) {
+        console.info('DEVICE: CALLBACK ON OPEN', callback)
+        callback()
+      } else {
+        console.warn('DEVICE: NO CALLBACK')
+      }
     })
   }
 
   seek(percentage) {
     let _this = this
-    let params = { "jsonrpc":"2.0","method":"Player.Seek","params":{ "playerid":1, "value": parseInt(percentage) }, "id": 1 }
+    let params = { "jsonrpc":"2.0","method":"Player.Seek","params":{ "playerid":1, "value": percentage }, "id": 1 }
     // xbmc.Player.Seek({"playerid":1,"value":{ "hours":0, "minutes":10, "seconds":0}})
-    console.log('DEVICE: Seek', percentage)
-    console.log('DEVICE: Seek params', params)
-    this.client.call(params, function (error, response) {
-      _this.constructor.errorHandler(error || response.error)
-      eventHub.emit('PLAYER_PLAY', _this)
-    })
+    console.warn('DEVICE: Seek', percentage)
+
+    if(this.playerid) {
+      this.client.call(params, function (error, response) {
+        _this.constructor.errorHandler(error || response.error)
+        eventHub.emit('PLAYER_PLAY', _this)
+      })
+    }
   }
 
   play() {
