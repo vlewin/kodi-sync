@@ -7,15 +7,15 @@
 
     <div class="toolbar-actions">
       <div class="btn-group">
-        <button class="btn btn-default">
+        <button class="btn btn-default active">
           <span class="icon icon-home"></span>
         </button>
         <button class="btn btn-default">
-          <span class="icon icon-folder"></span>
+          <span class="icon icon-cog"></span>
         </button>
-        <button class="btn btn-default active">
+        <!-- <button class="btn btn-default active">
           <span class="icon icon-cloud"></span>
-        </button>
+        </button> -->
       </div>
 
       <!-- <button class="btn btn-default">
@@ -23,7 +23,7 @@
         Filters
       </button> -->
 
-      <button class="btn btn-default" v-on:click="scan">
+      <button class="btn btn-default" v-on:click="rescan">
         <span class="icon icon-target"></span>
         &nbsp; Rescan
       </button>
@@ -36,15 +36,17 @@
   </header>
 
   <div class="window-content">
+
     <div class="pane-group">
       <div class="pane">
         <ul class="list-group">
           <li class="list-group-header">
             Source device
+            Number of devices: {{ devices.length }}
           </li>
 
           <li v-if="source" class="list-group-item">
-            <img class="img-circle media-object pull-left" v-bind:src="source.image" width="42" height="42">
+            <img class="media-object img-border pull-left" v-bind:src="source.image" width="48" height="48">
             <div class="media-body">
               <strong>
                 {{ source.name }} ({{ source.ip }})
@@ -54,35 +56,43 @@
                 <button class="btn btn-mini btn-default" v-bind:class="{ active: showStreamForm }" v-on:click="toggleStreamURLForm">
                   <span class="icon icon-plus-circled"></span>
                 </button>
-                <button class="btn btn-mini btn-default" v-if="source.playerid" v-on:click="stop"><span class="icon icon-stop"></span></button>
+                <button class="btn btn-mini btn-default" v-if="source.playerid && source.paused" v-on:click="play(source)">
+                  <span class="icon icon-play"></span>
+                </button>
+                <button class="btn btn-mini btn-default" v-if="source.playerid && !source.paused" v-on:click="pause(source)">
+                  <span class="icon icon-pause"></span>
+                </button>
+                <button class="btn btn-mini btn-default" v-if="source.playerid && !source.paused" v-on:click="stop(source)">
+                  <span class="icon icon-stop"></span>
+                </button>
                 <button class="btn btn-mini btn-default" v-on:click="setTarget(source)" v-bind:disabled="!targets.length">
                   <span class="icon icon-down-circled"></span>
                 </button>
               </div>
 
-              <p v-if="source.stream">
-                <small>Now playing: {{ source.stream && source.stream.title ? source.stream.title : '---' }}</small>
-              </p>
+              <div v-if="source.stream && source.progress">
+                <p>
+                  Now playing: {{ source.stream ? source.stream.title : '---' }} ({{ source.progress.percentage }}%)
+                </p>
 
-              <p v-if="source.progress">
-                <progress max="100" v-bind:value="source.progress"></progress>
-              </p>
-
-              <br>
+                <p>
+                  <progress max="100" v-bind:value="source.progress.percentage"></progress>
+                </p>
+              </div>
 
               <div class="form-group pull-left width-100" v-if="showStreamForm">
                 <input type="url" class="form-control" placeholder="Please enter a network URL" v-model="streamURL" required>
                 <div>
                   <small class="grey">
-                    Validation message ?????
-                    https://css-tricks.com/form-validation-ux-html-css/
+                    <!-- Validation message ????? -->
+                    <!-- https://css-tricks.com/form-validation-ux-html-css/ -->
                   </small>
                 </div>
 
                 <br>
                 <div class="form-actions">
                   <button class="btn btn-form btn-default" v-on:click="closeStreamURLForm">Cancel</button>
-                  <button class="btn btn-form btn-primary" v-on:click="play" v-bind:disabled="!streamURL">
+                  <button class="btn btn-form btn-primary" v-on:click="open" v-bind:disabled="!streamURL">
                     <span class="icon icon-paper-plane white"></span>
                     &nbsp; Play
                   </button>
@@ -122,7 +132,7 @@
                     &nbsp;
                   </legend>
 
-                  <!-- <a href="http://kodi.wiki/view/Webserver#Enabling_the_webserver" target="_blank">Enable Kodi webserver</a> -->
+                  <!-- <a href="http://Kodi.wiki/view/Webserver#Enabling_the_webserver" target="_blank">Enable Kodi webserver</a> -->
                   Check Kodi settings:
                   <pre><small>"Enable Settings" > "Services" > "Webserver" > "Allow control of Kodi via HTTP"</small></pre>
 
@@ -130,7 +140,7 @@
 
                   <p>
                     or try to
-                    <button class="btn btn-mini btn-primary" v-on:click="scan">
+                    <button class="btn btn-mini btn-primary" v-on:click="rescan">
                       <span class="icon icon-target white"></span>&nbsp; Rescan
                     </button>
                     the network.
@@ -145,7 +155,7 @@
           </li>
 
           <li class="list-group-item" v-bind:class="{ active: device.name === target.name }" v-for="device in targets" v-on:click="setTarget(device)" v-if="targets.length">
-            <img class="img-circle media-object pull-left" v-bind:src="device.image" width="32" height="32">
+            <img class="media-object img-border img-circle pull-left" v-bind:src="device.image" width="48" height="48">
             <div class="media-body">
               <strong>
                 {{ device.name }} ({{ device.ip }})
@@ -154,7 +164,7 @@
                   Set as source
                 </button> -->
 
-                <div class="btn-group pull-right">
+                <!-- <div class="btn-group pull-right">
                   <button class="btn btn-mini btn-default">
                     <span class="icon icon-pause" v-if="device.playerid"></span>
                     <span class="icon icon-play" v-else></span>
@@ -164,20 +174,36 @@
                     <span class="icon icon-up-circled">
                     Set as source
                   </button>
+                </div> -->
+
+                <div class="btn-group pull-right">
+                  <button class="btn btn-mini btn-default" v-if="device.playerid && device.paused" v-on:click="play(device)">
+                    <span class="icon icon-play"></span>
+                  </button>
+                  <button class="btn btn-mini btn-default" v-if="device.playerid && !device.paused" v-on:click="pause(device)">
+                    <span class="icon icon-pause"></span>
+                  </button>
+                  <button class="btn btn-mini btn-default" v-if="device.playerid && !device.paused" v-on:click="stop(device)">
+                    <span class="icon icon-stop"></span>
+                  </button>
+                  <button class="btn btn-mini btn-default" v-on:click="setSource(device)">
+                    <span class="icon icon-up-circled"></span>
+                  </button>
                 </div>
-
-
               </strong>
-              <p>
-                <small>Now playing: {{ isPlaying(device) ? device.stream.title : '---' }}</small>
-              </p>
+
+              <div v-if="device.stream && device.progress">
+                <p>
+                  Now playing: {{ device.stream ? device.stream.title : '---' }} ({{ device.progress.percentage }}%)
+                </p>
+
+                <p>
+                  <progress max="100" v-bind:value="device.progress.percentage"></progress>
+                </p>
+              </div>
             </div>
           </li>
         </ul>
-
-        <br>
-
-
 
       </div>
     </div>
@@ -190,8 +216,6 @@
           <p>Sync "{{ source.name }}" with "{{ target.name }}"</p>
         </button>
       </div>
-
-      <!-- <button class="btn btn-primary pull-right">Save</button> -->
     </div>
   </footer>
 </div>
@@ -201,10 +225,11 @@
 <script>
   const { ipcRenderer } = require('electron')
   const Vue = require('vue/dist/vue.js')
-  const $ = require('jquery')
-  const rpc = require('node-json-rpc')
-  const bonjour = require('bonjour')()
-  const kodi = require('./scripts/kodi.js')
+  const Store = require('store')
+  const Rpc = require('node-json-rpc')
+  const Bonjour = require('bonjour')()
+  const Kodi = require('./scripts/kodi')
+  const Device = require('./scripts/device')
 
   Vue.config.silent = false
 
@@ -215,23 +240,93 @@
         devices: [],
         source: null,
         target: null,
-        streamURL: null,
+        streamURL: 'http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4',
         showStreamForm: false
       }
     },
 
     created() {
-      this.scan()
-
+      // this.scan()
+      Device.findAll()
     },
 
     mounted() {
-      // this.scan()
-      // ipcRenderer.on('asynchronous-reply', (event, arg) => {
-      //   console.log(arg) // prints "pong"
-      // })
+      let _this = this
 
-      // ipcRenderer.send('asynchronous-message', 'ping')
+      Device.eventHub.on('SERVICE_UP', function(service) {
+        console.log('EVENT: Service found:', service.name)
+        let device = new Device(service)
+        _this.addDevice(device)
+      })
+
+      Device.eventHub.on('SERVICE_DOWN', function(service) {
+        console.log('EVENT: Service found:', service.name)
+        let device = new Device(service)
+        _this.removeDevice(device)
+      })
+
+
+      Device.eventHub.on('ACTIVE_PLAYER', function(device, playerid) {
+        console.log('EVENT: Active player on device:', device.name, playerid)
+        device.playerid = playerid
+      })
+
+      Device.eventHub.on('PLAYER_ITEM', function(device, stream) {
+        console.log('EVENT: Playback on device:', device.name, stream.title)
+        device.stream = stream
+      })
+
+      Device.eventHub.on('PLAYER_PROGRESS', function(device, progress) {
+        console.log('EVENT: Playback progress:', device.name, progress.percentage, device.timer)
+
+        clearTimeout(device.timer)
+        device.progress = progress
+
+        // FIXME: getProgress called twice for each device
+        device.timer = setTimeout(function() {
+          device.getProgress()
+        }, 5000)
+      })
+
+      Device.eventHub.on('PLAYER_OPEN', function(device) {
+        _this.refresh(device)
+      })
+
+      Device.eventHub.on('PLAYER_PLAY', function(device) {
+        device.paused = false
+        _this.refresh(device)
+      })
+
+      Device.eventHub.on('PLAYER_PAUSE', function(device) {
+        device.paused = true
+        clearTimeout(device.timer)
+      })
+
+      Device.eventHub.on('PLAYER_STOP', function(device) {
+        _this.refresh(device)
+      })
+
+    },
+
+    destroyed() {
+      console.warn('Component destroyed, clear timers')
+      this.clearAllTimers()
+
+      // Device.eventHub.removeListener('SERVICE_UP', function() {
+      //   console.log(Device.eventHub.listenerCount('SERVICE_UP'))
+      // })
+      //
+      // Device.eventHub.removeListener('ACTIVE_PLAYER_FOUND', function() {
+      //   console.log(Device.eventHub.listenerCount('ACTIVE_PLAYER_FOUND'))
+      // })
+      //
+      // Device.eventHub.removeListener('NOW_PLAYING', function() {
+      //   console.log(Device.eventHub.listenerCount('NOW_PLAYING'))
+      // })
+      //
+      // Device.eventHub.removeListener('PROGRESS', function() {
+      //   console.log(Device.eventHub.listenerCount('PROGRESS'))
+      // })
     },
 
     watch: {
@@ -246,9 +341,10 @@
         let _this = this
         if(!!this.source) {
           if(this.source.playerid) {
-            kodi.nowPlaying(this.source, function() {
-              _this.sourceDeviceImage()
-            })
+            this.source.refresh()
+            // Kodi.nowPlaying(this.source, function() {
+            //   _this.sourceDeviceImage()
+            // })
           }
         }
       }
@@ -268,6 +364,22 @@
     },
 
     methods: {
+      addDevice(device) {
+        let includes = this.devices.find(function(item) {
+          return item.name == device.name
+        })
+
+        if(!includes) {
+          this.devices.push(device)
+        }
+      },
+
+      removeDevice(device) {
+        this.devices = this.devices.filter(function (item) {
+          return item.name != device.name
+        })
+      },
+
       imageExists(url, callback) {
         var img = new Image();
         img.onload = function() { callback(true); };
@@ -289,68 +401,38 @@
         }
       },
 
-      initClient(service) {
-        return new rpc.Client({
-          host: service.referer.address,
-          port: service.port,
-          path: '/jsonrpc',
-          strict: true
-        })
-      },
-
-      initDevice(service) {
-        return {
-          name: service.name,
-          ip: service.referer.address,
-          port: service.port,
-          image: './images/kodi.png',
-          playerid: null,
-          stream: null,
-          progress: null,
-          client: this.initClient(service)
-        }
-      },
-
-      scan() {
-        let _this = this
+      rescan() {
         this.devices = []
-
-        console.log('Scan for kodi devices')
-        bonjour.find({ type: 'http' }, function (service) {
-          // console.log('Found an HTTP server:', JSON.stringify(service))
-          if(service.name.includes('Kodi')) {
-            console.info('Kodi player detected', service.name)
-            let device = _this.initDevice(service)
-            _this.devices.push(device)
-
-            console.log('Get active players for device', device.name)
-            kodi.getActivePlayers(device)
-            kodi.nowPlaying(device, function() {
-              _this.sourceDeviceImage()
-            })
-          }
-        })
+        this.clearAllTimers()
+        Device.findAll()
       },
 
       refresh(device) {
-        let _this = this
-        kodi.getActivePlayers(device)
-        kodi.nowPlaying(device, function() {
-          _this.sourceDeviceImage()
-        })
+        console.log('INDEX: refresh', device.name)
+        device.getActivePlayers()
+        device.nowPlaying()
+        device.getProgress()
       },
 
       refreshAll() {
-        let _this = this
+        this.clearAllTimers()
+
         for(let i in this.devices) {
           let device = this.devices[i]
-          this.refresh(device)
+          device.refresh()
+        }
+      },
+
+      clearAllTimers() {
+        for(let i in this.devices) {
+          console.log('Clear refresh timer')
+          clearTimeout(this.devices[i].timer)
         }
       },
 
       setSource(device) {
         this.source = device
-        kodi.getActivePlayers(device)
+        device.refresh()
       },
 
       setTarget(device) {
@@ -366,29 +448,36 @@
       },
 
       closeStreamURLForm() {
-        this.streamURL = null
+        // this.streamURL = null
         this.showStreamForm = false
       },
 
-      isPlaying(device) {
-        return device.playerid && device.stream
-      },
+      // isPlaying(device) {
+      //   return device.playerid && device.stream
+      // },
 
-      play() {
+      open() {
         //TODO: Add loading indicator
-        console.info('Play', this.streamURL)
-        kodi.play(this.source, this.streamURL)
+        this.source.open(this.streamURL)
         this.closeStreamURLForm()
       },
 
-      stop() {
-        //TODO: Add loading indicator
-        kodi.stop(this.source)
+      play(device) {
+        device.play()
+      },
+
+      pause(device) {
+        device.pause()
+      },
+
+      stop(device) {
+        device.stop()
       },
 
       sync() {
-        kodi.sync(this.source, this.target)
-        kodi.nowPlaying(this.target)
+        Device.sync(this.source, this.target)
+        // Kodi.nowPlaying(this.target)
+        this.refreshAll()
       },
 
       quit() {

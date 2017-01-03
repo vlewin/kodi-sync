@@ -61,14 +61,63 @@ pre, pre > small {
 }
 
 /* Framework overrides */
+strong {
+  line-height: 24px;
+}
+
+.media-object {
+  margin-top: 5px;
+}
+
 li.list-group-header {
   background-color: #eee;
 }
 
-.img-circle {
-  border: 2px solid #eee
+.img-border {
+  border: 2px solid #eee;
+}
+
+.form-group {
+  margin-top: 5px;
 }
 
 #targets li.active button {
   color: #333;
+}
+
+#targets li.active progress::-webkit-progress-bar {
+  background-color: #fff;
+}
+
+progress {
+	width: 100%;
+	height: 10px;
+	margin: 50px auto;
+	display: block;
+	border: none;
+  -webkit-appearance: none;
+}
+
+progress::-webkit-progress-bar {
+	background: #e8e6e8;
+	border-radius: 50px;
+	padding: 2px;
+	box-shadow: 0 1px 0px 0 rgba(255, 255, 255, 0.2);
+}
+
+progress::-webkit-progress-value {
+	border-radius: 50px;
+	box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
+	background:
+		-webkit-linear-gradient(45deg, transparent, transparent 33%, rgba(0, 0, 0, 0.1) 33%, rgba(0, 0, 0, 0.1) 66%, transparent 66%),
+		-webkit-linear-gradient(top, rgba(255, 255, 255, 0.25), rgba(0, 0, 0, 0.2)),
+		-webkit-linear-gradient(left, #388df8, #0866dc);
+
+	background-size: 25px 14px, 100% 100%, 100% 100%;
+	-webkit-animation: move 1s linear 0 infinite;
+}
+
+@-webkit-keyframes move {
+	0% {background-position: 0px 0px, 0 0, 0 0}
+	100% {background-position: -100px 0px, 0 0, 0 0}
 }
