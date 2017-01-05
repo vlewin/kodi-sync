@@ -177,9 +177,10 @@ var vm = new Vue({
 
     playing(device) {
       let _this = this
-      device.client.player.getCurrentlyPlayingVideo().then(function(response) {
+      let params = { properties: ["title", "year", "art", "rating", "runtime", "imdbnumber", "showtitle", "season", "episode", "file", "duration", "description"]}
+      device.client.player.getCurrentlyPlayingVideo(params).then(function(response) {
         if(response && !!response.item.file) {
-          // console.log('Info:', device.name, JSON.stringify(response))
+          console.log('Info:', device.name, JSON.stringify(response))
 
           let stream = {
             title: response.item.label,
