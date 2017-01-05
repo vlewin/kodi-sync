@@ -15,7 +15,10 @@
     "electron",
     "kodi",
     "sync",
-    "streaming"
+    "streaming",
+    "vue",
+    "photonkit",
+    "node-kodi"
   ],
   "author": "Vladislav Lewin",
   "license": "ISC",
