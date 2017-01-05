@@ -28,3 +28,6 @@ TDB: `npm run build`
 
 ### Thanks to
 @martinverup for [node-kodi library](https://github.com/martinverup/node-kodi)
+
+### WIP
+`tiffutil -cathidpicheck tray-default.png tray-default@2x.png -out tray-default.tiff`

@@ -1,13 +1,14 @@
 const DEBUG = false
 const path = require('path')
 const { app, BrowserWindow, Tray, ipcMain, nativeImage } = require('electron')
+
+// FIXME: Tray icon for windows and linux => http://electron.rocks/proper-tray-icon/
 const ASSETS_DIR = path.join(__dirname, 'app', 'images')
+const TRAY_ICON = nativeImage.createFromPath(path.join(ASSETS_DIR, 'tray.png'))
+const TRAY_ICON_HIGHLIGHTED = nativeImage.createFromPath(path.join(ASSETS_DIR, 'tray-highlighted.png'))
 
-const TRAY_ICON = nativeImage.createFromPath(path.join(ASSETS_DIR, 'stream-small.png'));
-TRAY_ICON.setTemplateImage(true);
-
-const TRAY_ICON_ACTIVE = nativeImage.createFromPath(path.join(ASSETS_DIR, 'stream-small-active.png'));
-TRAY_ICON_ACTIVE.setTemplateImage(true);
+TRAY_ICON.setTemplateImage(true)
+TRAY_ICON_HIGHLIGHTED.setTemplateImage(true)
 
 let tray = undefined
 let window = undefined
@@ -22,9 +23,8 @@ dock.hide()
 
 // Application events
 app.on('ready', () => {
-  // http://electron.rocks/proper-tray-icon/
-  // tray = new Tray(path.join(ASSETS_DIR, 'stream-small.png'))
   tray = new Tray(TRAY_ICON)
+  tray.setPressedImage(TRAY_ICON_HIGHLIGHTED);
   tray.setToolTip('Kodi Sync')
   tray.on('click', function (event) {
     console.log('Tray clicked')
@@ -91,17 +91,18 @@ const createWindow = () => {
 
   window.on('show', () => {
     console.log('window show')
-    // tray.setImage(path.join(ASSETS_DIR, 'stream-small-active.png'));
-    tray.setPressedImage(TRAY_ICON_ACTIVE)
+    tray.setImage(TRAY_ICON_HIGHLIGHTED)
+    // tray.setPressedImage(TRAY_ICON_HIGHLIGHTED)
     tray.setHighlightMode('always')
   })
 
   window.on('hide', () => {
     console.log('window hide')
-    // tray.setImage(path.join(ASSETS_DIR, 'stream-small.png'));
-    tray.setPressedImage(TRAY_ICON)
+    tray.setImage(TRAY_ICON);
+    // tray.setPressedImage(TRAY_ICON)
     tray.setHighlightMode('never')
-  })}
+  })
+}
 
 const toggleWindow = () => {
   if (window.isVisible()) {
