@@ -8,6 +8,7 @@ const eventHub = new EventEmitter()
 
 class Device {
   constructor(service) {
+    console.log('constructor', service.name)
     this.name = service.name
     this.ip = service.referer.address
     this.port = service.port
@@ -93,6 +94,8 @@ class Device {
   }
 
   getActivePlayers() {
+    console.log('DEVICE: getActivePlayers', this.name)
+
     let _this = this
     let params = {"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}
 
@@ -110,6 +113,8 @@ class Device {
   }
 
   nowPlaying() {
+    console.log('DEVICE: nowPlaying', this.name)
+
     let _this = this
     let params = { "jsonrpc": "2.0", "method": "Player.GetItem", "params": { "playerid": 1, "properties": [ "title", "thumbnail", "file"] }, "id": 1}
 
@@ -140,7 +145,8 @@ class Device {
         let progress = response.result
         if(progress) {
           eventHub.emit('PLAYER_PROGRESS', _this, {
-            percentage: Math.round(progress.percentage),
+            percentage: progress.percentage.toFixed(3),
+            // percentage: Math.round(progress.percentage),
             time: progress.time,
             totaltime: progress.totaltime
           })

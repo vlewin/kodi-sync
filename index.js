@@ -66,8 +66,8 @@ const createWindow = () => {
     window.webContents.openDevTools()
   } else {
     window = new BrowserWindow({
-      width: 400,
-      height: 400,
+      width: 420,
+      height: 420,
       show: true,
       frame: false,
       fullscreenable: false,

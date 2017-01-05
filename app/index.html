@@ -13,9 +13,6 @@
         <button class="btn btn-default">
           <span class="icon icon-cog"></span>
         </button>
-        <!-- <button class="btn btn-default active">
-          <span class="icon icon-cloud"></span>
-        </button> -->
       </div>
 
       <!-- <button class="btn btn-default">
@@ -52,7 +49,6 @@
         <ul class="list-group">
           <li class="list-group-header">
             Source device
-            Number of devices: {{ devices.length }}
           </li>
 
           <li v-if="source" class="list-group-item">
@@ -66,13 +62,13 @@
                 <button class="btn btn-mini btn-default" v-bind:class="{ active: showStreamForm }" v-on:click="toggleStreamURLForm">
                   <span class="icon icon-plus-circled"></span>
                 </button>
-                <button class="btn btn-mini btn-default" v-if="source.playerid && source.paused" v-on:click="play(source)">
+                <button class="btn btn-mini btn-default" v-if="source.playing && source.paused" v-on:click="play(source)">
                   <span class="icon icon-play"></span>
                 </button>
-                <button class="btn btn-mini btn-default" v-if="source.playerid && !source.paused" v-on:click="pause(source)">
+                <button class="btn btn-mini btn-default" v-if="source.playing && !source.paused" v-on:click="pause(source)">
                   <span class="icon icon-pause"></span>
                 </button>
-                <button class="btn btn-mini btn-default" v-if="source.playerid" v-on:click="stop(source)">
+                <button class="btn btn-mini btn-default" v-if="source.playing" v-on:click="stop(source)">
                   <span class="icon icon-stop"></span>
                 </button>
                 <button class="btn btn-mini btn-default" v-on:click="setTarget(source)" v-bind:disabled="!targets.length">
@@ -82,7 +78,7 @@
 
               <div v-if="source.stream && source.progress">
                 <p>
-                  Now playing: {{ source.stream ? source.stream.title : '---' }} ({{ source.progress.percentage }}%)
+                  {{ source.stream ? source.stream.title : '---' }} ({{ source.progress.percentage.toFixed(2) }}%)
                 </p>
 
                 <p>
@@ -120,7 +116,7 @@
 
         <ul id="#targets" class="list-group">
           <li class="list-group-header">
-            Target devices
+            Target devices ({{ targets.length }})
             <button class="btn btn-mini btn-primary pull-right" v-on:click="refreshAll">
               <span class="icon icon-arrows-ccw white"></span>&nbsp; Refresh all
             </button>
@@ -156,7 +152,6 @@
                     the network.
                   </p>
                 </fieldset>
-                <!-- <small>Now playing: '?????'</small> -->
               </p>
 
 
@@ -169,18 +164,14 @@
             <div class="media-body">
               <strong>
                 {{ device.name }} ({{ device.ip }})
-                <div class="btn-group pull-right">
-                  <button class="btn btn-mini btn-default" disabled>
-                    <span class="icon icon-help-circled"></span>
-                  </button>
-
-                  <button class="btn btn-mini btn-default" v-if="device.playerid && device.paused" v-on:click="play(device)">
+                <div class="btn-group pull-right" v-if="device.playing">
+                  <button class="btn btn-mini btn-default" v-if="device.paused" v-on:click="play(device)">
                     <span class="icon icon-play"></span>
                   </button>
-                  <button class="btn btn-mini btn-default" v-if="device.playerid && !device.paused" v-on:click="pause(device)">
+                  <button class="btn btn-mini btn-default" v-if="!device.paused" v-on:click="pause(device)">
                     <span class="icon icon-pause"></span>
                   </button>
-                  <button class="btn btn-mini btn-default" v-if="device.playerid" v-on:click="stop(device)">
+                  <button class="btn btn-mini btn-default" v-on:click="stop(device)">
                     <span class="icon icon-stop"></span>
                   </button>
                   <button class="btn btn-mini btn-default" v-on:click="setSource(device)">
@@ -191,7 +182,7 @@
 
               <div v-if="device.stream && device.progress">
                 <p>
-                  Now playing: {{ device.stream ? device.stream.title : '---' }} ({{ device.progress.percentage }}%)
+                  {{ device.stream ? device.stream.title : '---' }} ({{ device.progress.percentage.toFixed(2) }}%)
                 </p>
 
                 <p>
@@ -218,281 +209,4 @@
 </div>
 
 <script src="https://vuejs.org/js/vue.js"></script>
-
-<script>
-  const { ipcRenderer } = require('electron')
-  const Vue = require('vue/dist/vue.js')
-  const Store = require('store')
-  const Rpc = require('node-json-rpc')
-  const Bonjour = require('bonjour')()
-  const Kodi = require('./scripts/kodi')
-  const Device = require('./scripts/device')
-
-  Vue.config.silent = false
-
-  var vm = new Vue({
-    el: '#app',
-    data() {
-      return {
-        devices: [],
-        source: null,
-        target: null,
-        streamURL: 'http://www.sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4',
-        showStreamForm: false
-      }
-    },
-
-    created() {
-      // this.scan()
-      Device.findAll()
-    },
-
-    mounted() {
-      let _this = this
-
-      Device.eventHub.on('SERVICE_UP', function(service) {
-        console.log('EVENT: Service found:', service.name)
-        let device = new Device(service)
-        _this.addDevice(device)
-      })
-
-      Device.eventHub.on('SERVICE_DOWN', function(service) {
-        console.log('EVENT: Service found:', service.name)
-        let device = new Device(service)
-        _this.removeDevice(device)
-      })
-
-
-      Device.eventHub.on('ACTIVE_PLAYER', function(device, playerid) {
-        console.log('EVENT: Active player on device:', device.name, playerid)
-        device.playerid = playerid
-      })
-
-      Device.eventHub.on('PLAYER_ITEM', function(device, stream) {
-        console.log('EVENT: Playback on device:', device.name, stream.title)
-        device.stream = stream
-      })
-
-      Device.eventHub.on('PLAYER_PROGRESS', function(device, progress) {
-        console.log('EVENT: Playback progress:', device.name, progress.percentage, device.timer)
-
-        clearTimeout(device.timer)
-        device.progress = progress
-
-        // FIXME: getProgress called twice for each device
-        device.timer = setTimeout(function() {
-          device.getProgress()
-        }, 5000)
-      })
-
-      Device.eventHub.on('PLAYER_OPEN', function(device) {
-        console.log('EVENT: PLAYER_OPEN', device.name, device.progress.percentage)
-        _this.refreshAll()
-      })
-
-      Device.eventHub.on('PLAYER_PLAY', function(device) {
-        console.log('EVENT: PLAYER_PLAY', device.name, device.progress.percentage)
-
-        device.paused = false
-        _this.refresh(device)
-      })
-
-      Device.eventHub.on('PLAYER_PAUSE', function(device) {
-        console.log('EVENT: PLAYER_PAUSE', device.name, device.progress.percentage)
-        device.paused = true
-        clearTimeout(device.timer)
-      })
-
-      Device.eventHub.on('PLAYER_STOP', function(device) {
-        console.log('EVENT: PLAYER_STOP', device.name, device.progress.percentage)
-        _this.refresh(device)
-      })
-
-    },
-
-    destroyed() {
-      console.warn('Component destroyed, clear timers')
-      this.clearAllTimers()
-
-      // Device.eventHub.removeListener('SERVICE_UP', function() {
-      //   console.log(Device.eventHub.listenerCount('SERVICE_UP'))
-      // })
-      //
-      // Device.eventHub.removeListener('ACTIVE_PLAYER_FOUND', function() {
-      //   console.log(Device.eventHub.listenerCount('ACTIVE_PLAYER_FOUND'))
-      // })
-      //
-      // Device.eventHub.removeListener('NOW_PLAYING', function() {
-      //   console.log(Device.eventHub.listenerCount('NOW_PLAYING'))
-      // })
-      //
-      // Device.eventHub.removeListener('PROGRESS', function() {
-      //   console.log(Device.eventHub.listenerCount('PROGRESS'))
-      // })
-    },
-
-    watch: {
-      devices() {
-        this.source = this.devices[0]
-        if(this.devices.length == 2) {
-          this.target = this.devices[1]
-        }
-      },
-
-      source(val) {
-        let _this = this
-        if(!!this.source) {
-          if(this.source.playerid) {
-            this.source.refresh()
-            // Kodi.nowPlaying(this.source, function() {
-            //   _this.sourceDeviceImage()
-            // })
-          }
-        }
-      }
-    },
-
-    computed: {
-      targets() {
-        let _this = this
-        return this.devices.filter(function(device) {
-          return device.name != _this.source.name
-        })
-      },
-
-      ready() {
-        return this.source && this.target
-      }
-    },
-
-    methods: {
-      addDevice(device) {
-        let includes = this.devices.find(function(item) {
-          return item.name == device.name
-        })
-
-        if(!includes) {
-          this.devices.push(device)
-        }
-      },
-
-      removeDevice(device) {
-        this.devices = this.devices.filter(function (item) {
-          return item.name != device.name
-        })
-      },
-
-      imageExists(url, callback) {
-        var img = new Image();
-        img.onload = function() { callback(true); };
-        img.onerror = function() { callback(false); };
-        img.src = url;
-      },
-
-      sourceDeviceImage() {
-        let _this = this
-
-        if(this.source && this.source.stream) {
-          if(this.source.stream.image) {
-            this.imageExists(this.source.stream.image, function(exists) {
-              if(exists) {
-                _this.source.image = _this.source.stream.image
-              }
-            })
-          }
-        }
-      },
-
-      rescan() {
-        this.devices = []
-        this.clearAllTimers()
-        Device.findAll()
-      },
-
-      refresh(device) {
-        console.log('INDEX: refresh', device.name)
-        device.getActivePlayers()
-        device.nowPlaying()
-        device.getProgress()
-      },
-
-      refreshAll() {
-        this.clearAllTimers()
-
-        for(let i in this.devices) {
-          let device = this.devices[i]
-          device.refresh()
-        }
-      },
-
-      clearAllTimers() {
-        for(let i in this.devices) {
-          console.log('Clear refresh timer')
-          clearTimeout(this.devices[i].timer)
-        }
-      },
-
-      setSource(device) {
-        this.source = device
-        device.refresh()
-      },
-
-      setTarget(device) {
-        this.target = device
-
-        if(device.name === this.source.name) {
-          this.source = this.targets[0]
-        }
-      },
-
-      toggleStreamURLForm() {
-        this.showStreamForm = !this.showStreamForm
-      },
-
-      closeStreamURLForm() {
-        // this.streamURL = null
-        this.showStreamForm = false
-      },
-
-      // isPlaying(device) {
-      //   return device.playerid && device.stream
-      // },
-
-      open() {
-        //TODO: Add loading indicator
-        this.source.open(this.streamURL)
-        this.closeStreamURLForm()
-      },
-
-      play(device) {
-        device.play()
-      },
-
-      pause(device) {
-        device.pause()
-      },
-
-      stop(device) {
-        device.stop()
-      },
-
-      backward() {
-        this.source.seek(10)
-      },
-
-      seek() {
-        this.source.seek(60)
-      },
-
-      sync() {
-        Device.sync(this.source, this.target)
-      },
-
-      quit() {
-        ipcRenderer.send('quit', 'ping')
-      }
-    }
-  })
-
-
-</script>
+<script src="./scripts/app.js"></script>
