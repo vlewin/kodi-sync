@@ -14,7 +14,8 @@ var vm = new Vue({
       source: null,
       target: null,
       streamURL: 'http://trailers.divx.com/divx_prod/divx_plus_hd_showcase/Sintel_DivXPlus_6500kbps.mkv',
-      showStreamForm: false
+      showStreamForm: false,
+      loading: false
     }
   },
 
@@ -40,6 +41,7 @@ var vm = new Vue({
         progress: null,
         timer: null,
         interval: null,
+        loading: false,
         client: new Rpc({ url: `http://${service.referer.address}:${service.port}`, user: 'kodi'})
       }
 
@@ -215,10 +217,14 @@ var vm = new Vue({
       let _this = this
       console.log('INDEX: refresh', device.name)
 
+      device.loading = true
+
       return Promise.all([
         this.playing(device),
         this.progress(device)
       ]).then(function() {
+        device.loading = false
+
         clearTimeout(device.timer)
         device.timer = setTimeout(function() {
           _this.refresh(device)
@@ -269,11 +275,12 @@ var vm = new Vue({
     open() {
       //TODO: Add loading indicator
       let _this = this
-      let params = {"item":{"file": this.streamURL }}
+      this.source.loading = true
 
       this.stop(this.source).then(function() {
-        _this.source.client.player.open(params).then(function(r) {
+        _this.source.client.player.open({"item":{"file": _this.streamURL }}).then(function(r) {
           console.log(r);
+          _this.source.loading = false
         }).then(function() {
           setTimeout(function() {
             _this.refresh(_this.source)
@@ -285,22 +292,33 @@ var vm = new Vue({
     },
 
     play(device) {
+      let _this = this
+      device.loading = true
+
       return device.client.player.playPause({ play: true }).then(function(r) {
         device.paused = false
+        device.loading = false
       })
     },
 
     pause(device) {
+      let _this = this
+      device.loading = true
+
       return device.client.player.playPause({ play: false }).then(function(r) {
         device.paused = true
+        device.loading = false
       })
     },
 
     stop(device) {
-      console.log(device)
+      let _this = this
+      device.loading = true
+
       return device.client.player.stop().then(function(r) {
         device.playing = false
         device.stream = device.progress = null
+        device.loading = false
       })
     },
 
@@ -313,13 +331,16 @@ var vm = new Vue({
     },
 
     sync() {
-      // Device.sync(this.source, this.target)
+      let _this = this
       let item = {"file": this.source.stream.file }
       let options = {"resume": this.source.progress.time }
 
-      this.target.client.player.open({item: item, options: options}).then(function(r) {
-        console.log(r);
-      });
+      this.pause(this.source)
+
+      this.target.loading = this.loading = true
+      this.target.client.player.open({item: item, options: options }).then(function(r) {
+        _this.loading = false
+      })
 
     },
 

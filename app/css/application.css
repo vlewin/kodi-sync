@@ -23,6 +23,32 @@
   width: 100%;
 }
 
+/* Icons */
+.icon-medium {
+  font-size: 16px;
+}
+
+.icon-medium {
+  font-size: 22px;
+}
+
+.icon-large {
+  font-size: 28px;
+}
+
+.btn .icon-medium {
+  font-size: 22px;
+  line-height: 22px;
+  float: none;
+  width: 22px;
+  vertical-align: middle;
+  height: 22px;
+  display: inline-block;
+  color: #fff;
+  margin-bottom: 2px;
+
+}
+
 /* Forms */
 input:focus {
   box-shadow: none !important;
@@ -120,4 +146,17 @@ progress::-webkit-progress-value {
 @-webkit-keyframes move {
 	0% {background-position: 0px 0px, 0 0, 0 0}
 	100% {background-position: -100px 0px, 0 0, 0 0}
+}
+
+
+.spin {
+  animation-name: spin;
+  animation-duration: 4000ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+@keyframes spin {
+  from { transform:rotate(0deg); }
+  to { transform:rotate(360deg); }
 }

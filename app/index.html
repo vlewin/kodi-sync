@@ -76,14 +76,21 @@
                 </button>
               </div>
 
-              <div v-if="source.stream && source.progress">
-                <p>
-                  {{ source.stream ? source.stream.title : '---' }} ({{ source.progress.percentage.toFixed(2) }}%)
-                </p>
 
-                <p>
-                  <progress max="100" v-bind:value="source.progress.percentage"></progress>
-                </p>
+              <div v-if="source.loading">
+                <span class="icon icon-clock spin"></span>
+                loading ...
+              </div>
+              <div v-else>
+                <div v-if="source.stream && source.progress">
+                  <p>
+                    {{ source.stream ? source.stream.title : '---' }} ({{ source.progress.percentage.toFixed(2) }}%)
+                  </p>
+
+                  <p>
+                    <progress max="100" v-bind:value="source.progress.percentage"></progress>
+                  </p>
+                </div>
               </div>
 
               <div class="form-group pull-left width-100" v-if="showStreamForm">
@@ -180,15 +187,23 @@
                 </div>
               </strong>
 
-              <div v-if="device.stream && device.progress">
-                <p>
-                  {{ device.stream ? device.stream.title : '---' }} ({{ device.progress.percentage.toFixed(2) }}%)
-                </p>
-
-                <p>
-                  <progress max="100" v-bind:value="device.progress.percentage"></progress>
-                </p>
+              <div v-if="device.loading">
+                <span class="icon icon-clock spin"></span>
+                loading ...
               </div>
+
+              <div v-else>
+                <div v-if="device.stream && device.progress">
+                  <p>
+                    {{ device.stream ? device.stream.title : '---' }} ({{ device.progress.percentage.toFixed(2) }}%)
+                  </p>
+
+                  <p>
+                    <progress max="100" v-bind:value="device.progress.percentage"></progress>
+                  </p>
+                </div>
+              </div>
+
             </div>
           </li>
         </ul>
@@ -200,8 +215,9 @@
   <footer class="toolbar toolbar-footer">
     <div class="toolbar-actions">
       <div v-if="ready">
-        <button class="btn btn-large btn-primary width-100" v-on:click="sync()">
-          <p>Sync "{{ source.name }}" with "{{ target.name }}"</p>
+        <button class="btn btn-large btn-primary width-100" v-on:click="sync()" v-bind:disabled="loading">
+          <span class="icon icon-medium icon-clock spin" v-if="loading"></span>
+          Sync "{{ source.name }}" with "{{ target.name }}"
         </button>
       </div>
     </div>
