@@ -10,13 +10,13 @@ const TRAY_ICON_HIGHLIGHTED = nativeImage.createFromPath(path.join(ASSETS_DIR, '
 TRAY_ICON.setTemplateImage(true)
 TRAY_ICON_HIGHLIGHTED.setTemplateImage(true)
 
-let tray = undefined
-let window = undefined
-let dock = app.dock
+let tray
+let window
+const dock = app.dock
 
 require('electron-reload')(__dirname, {
   electron: require('electron-prebuilt')
-});
+})
 
 // NOTE: Don't show the app in the doc
 dock.hide()
@@ -24,7 +24,7 @@ dock.hide()
 // Application events
 app.on('ready', () => {
   tray = new Tray(TRAY_ICON)
-  tray.setPressedImage(TRAY_ICON_HIGHLIGHTED);
+  tray.setPressedImage(TRAY_ICON_HIGHLIGHTED)
   tray.setToolTip('Kodi Sync')
   tray.on('click', function (event) {
     console.log('Tray clicked')
@@ -51,7 +51,7 @@ ipcMain.on('quit', () => {
 
 // Creates window & specifies its values
 const createWindow = () => {
-  if(DEBUG) {
+  if (DEBUG) {
     window = new BrowserWindow({
       width: 800,
       height: 500,
@@ -98,7 +98,7 @@ const createWindow = () => {
 
   window.on('hide', () => {
     console.log('window hide')
-    tray.setImage(TRAY_ICON);
+    tray.setImage(TRAY_ICON)
     // tray.setPressedImage(TRAY_ICON)
     tray.setHighlightMode('never')
   })
@@ -133,5 +133,5 @@ const getWindowPosition = () => {
   // Position window 4 pixels vertically below the tray icon
   const y = Math.round(trayBounds.y + trayBounds.height + 3)
 
-  return {x: x, y: y}
+  return { x: x, y: y }
 }

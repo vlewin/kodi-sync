@@ -4,10 +4,10 @@ const EventEmitter = require('events')
 
 const eventHub = new EventEmitter()
 
-'use strict';
+'use strict'
 
 class Device {
-  constructor(service) {
+  constructor (service) {
     console.log('constructor', service.name)
     this.name = service.name
     this.ip = service.referer.address
@@ -30,19 +30,19 @@ class Device {
     this.refresh()
   }
 
-  static get bonjour() {
+  static get bonjour () {
     console.log('DEVICE: Bonjour getter')
     return Bonjour.find({ type: 'http' })
   }
 
-  static get eventHub() {
+  static get eventHub () {
     console.log('DEVICE: eventHub getter')
     return eventHub
   }
 
-  static findAll() {
-    this.bonjour.on('up', function(service) {
-      if(service.name.includes('Kodi')) {
+  static findAll () {
+    this.bonjour.on('up', function (service) {
+      if (service.name.includes('Kodi')) {
         // console.log('DEVICE: Service up:', service.name)
         eventHub.emit('SERVICE_UP', service)
       } else {
@@ -50,8 +50,8 @@ class Device {
       }
     })
 
-    this.bonjour.on('down', function(service) {
-      if(service.name.includes('Kodi')) {
+    this.bonjour.on('down', function (service) {
+      if (service.name.includes('Kodi')) {
         // console.log('DEVICE: Service down:', service.name)
         eventHub.emit('SERVICE_DOWN', service)
       } else {
@@ -60,13 +60,12 @@ class Device {
     })
   }
 
-  static sync(source, target) {
-    let file = source.stream.file
-    let percentage = source.progress.percentage
+  static sync (source, target) {
+    const file = source.stream.file
+    const percentage = source.progress.percentage
     console.log('Pause source')
     source.pause()
     console.log('Open file and seek', percentage)
-
 
     // target.open(file)
     // setTimeout(function() {
@@ -74,76 +73,76 @@ class Device {
     //   target.seek(percentage)
     // }, 3000)
 
-    target.open(file, function() {
+    target.open(file, function () {
       target.seek(percentage)
     })
   }
 
-  static errorHandler(error) {
-    if(error) {
+  static errorHandler (error) {
+    if (error) {
       console.error(JSON.stringify(error))
     }
 
     return false
   }
 
-  refresh() {
+  refresh () {
     this.getActivePlayers()
     this.nowPlaying()
     this.getProgress()
   }
 
-  getActivePlayers() {
+  getActivePlayers () {
     console.log('DEVICE: getActivePlayers', this.name)
 
-    let _this = this
-    let params = {"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'method': 'Player.GetActivePlayers', 'id': 1 }
 
-    this.client.call(params, function(error, response) {
+    this.client.call(params, function (error, response) {
       _this.constructor.errorHandler(error)
 
-      if(response && response.result.length) {
-        let playerid = response.result[0].playerid
-        eventHub.emit('ACTIVE_PLAYER', _this, playerid);
+      if (response && response.result.length) {
+        const playerid = response.result[0].playerid
+        eventHub.emit('ACTIVE_PLAYER', _this, playerid)
       } else {
         console.warn('No active players on device', _this.name)
-        eventHub.emit('ACTIVE_PLAYER', _this, null);
+        eventHub.emit('ACTIVE_PLAYER', _this, null)
       }
     })
   }
 
-  nowPlaying() {
+  nowPlaying () {
     console.log('DEVICE: nowPlaying', this.name)
 
-    let _this = this
-    let params = { "jsonrpc": "2.0", "method": "Player.GetItem", "params": { "playerid": 1, "properties": [ "title", "thumbnail", "file"] }, "id": 1}
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'method': 'Player.GetItem', 'params': { 'playerid': 1, 'properties': ['title', 'thumbnail', 'file'] }, 'id': 1 }
 
-    if(this.playerid) {
-      this.client.call(params, function(error, response) {
+    if (this.playerid) {
+      this.client.call(params, function (error, response) {
         _this.constructor.errorHandler(error)
 
-        if(!response.error) {
-          let item  = response.result.item
-          let title = !!item.label ? item.label : null
-          let file = !!item.file ? item.file : null
-          let image = !!item.thumbnail ? decodeURIComponent(item.thumbnail.replace('image://', '').replace('.jpg/', '.jpg')) : null
+        if (!response.error) {
+          const item = response.result.item
+          const title = item.label ? item.label : null
+          const file = item.file ? item.file : null
+          const image = item.thumbnail ? decodeURIComponent(item.thumbnail.replace('image://', '').replace('.jpg/', '.jpg')) : null
 
-          eventHub.emit('PLAYER_ITEM', _this, { title: title, file: file, image: image });
+          eventHub.emit('PLAYER_ITEM', _this, { title: title, file: file, image: image })
         }
       })
     }
   }
 
-  getProgress() {
-    let _this = this
-    let params = { "jsonrpc":"2.0","method":"Player.GetProperties","params":{"playerid":1, "properties":["percentage", "time", "totaltime"]}, "id": 1}
+  getProgress () {
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'method': 'Player.GetProperties', 'params': { 'playerid': 1, 'properties': ['percentage', 'time', 'totaltime'] }, 'id': 1 }
 
-    if(this.playerid) {
+    if (this.playerid) {
       this.client.call(params, function (error, response) {
         _this.constructor.errorHandler(error || response.error)
 
-        let progress = response.result
-        if(progress) {
+        const progress = response.result
+        if (progress) {
           eventHub.emit('PLAYER_PROGRESS', _this, {
             percentage: progress.percentage.toFixed(3),
             // percentage: Math.round(progress.percentage),
@@ -155,15 +154,15 @@ class Device {
     }
   }
 
-  open(stream, callback) {
-    let _this = this
-    let params = {"jsonrpc":"2.0","id":"1","method":"Player.Open","params":{"item":{"file": stream }}}
+  open (stream, callback) {
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'id': '1', 'method': 'Player.Open', 'params': { 'item': { 'file': stream }}}
 
     this.client.call(params, function (error, response) {
       _this.constructor.errorHandler(error || response.error)
       eventHub.emit('PLAYER_OPEN', _this)
 
-      if(callback) {
+      if (callback) {
         console.info('DEVICE: CALLBACK ON OPEN', callback)
         callback()
       } else {
@@ -172,13 +171,13 @@ class Device {
     })
   }
 
-  seek(percentage) {
-    let _this = this
-    let params = { "jsonrpc":"2.0","method":"Player.Seek","params":{ "playerid":1, "value": percentage }, "id": 1 }
+  seek (percentage) {
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'method': 'Player.Seek', 'params': { 'playerid': 1, 'value': percentage }, 'id': 1 }
     // xbmc.Player.Seek({"playerid":1,"value":{ "hours":0, "minutes":10, "seconds":0}})
     console.warn('DEVICE: Seek', percentage)
 
-    if(this.playerid) {
+    if (this.playerid) {
       this.client.call(params, function (error, response) {
         _this.constructor.errorHandler(error || response.error)
         eventHub.emit('PLAYER_PLAY', _this)
@@ -186,9 +185,9 @@ class Device {
     }
   }
 
-  play() {
-    let _this = this
-    let params = {"jsonrpc": "2.0", "method": "Player.PlayPause", "params": { "playerid": 1, "play":true }, "id": 1}
+  play () {
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'method': 'Player.PlayPause', 'params': { 'playerid': 1, 'play': true }, 'id': 1 }
 
     this.client.call(params, function (error, response) {
       _this.constructor.errorHandler(error || response.error)
@@ -196,9 +195,9 @@ class Device {
     })
   }
 
-  pause() {
-    let _this = this
-    let params = {"jsonrpc": "2.0", "method": "Player.PlayPause", "params": { "playerid": 1, "play":false }, "id": 1}
+  pause () {
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'method': 'Player.PlayPause', 'params': { 'playerid': 1, 'play': false }, 'id': 1 }
 
     this.client.call(params, function (error, response) {
       _this.constructor.errorHandler(error || response.error)
@@ -206,9 +205,9 @@ class Device {
     })
   }
 
-  stop() {
-    let _this = this
-    let params = {"jsonrpc": "2.0", "method": "Player.Stop", "params": { "playerid": 1 }, "id": 1}
+  stop () {
+    const _this = this
+    const params = { 'jsonrpc': '2.0', 'method': 'Player.Stop', 'params': { 'playerid': 1 }, 'id': 1 }
 
     this.client.call(params, function (error, response) {
       _this.constructor.errorHandler(error || response.error)

@@ -6,9 +6,10 @@ const Bonjour = require('bonjour')()
 Vue.config.silent = false
 
 const eventHub = new Vue()
-var vm = new Vue({
+
+new Vue({
   el: '#app',
-  data() {
+  data () {
     return {
       devices: [],
       source: null,
@@ -19,17 +20,17 @@ var vm = new Vue({
     }
   },
 
-  created() {
+  created () {
     this.findAll()
   },
 
-  mounted() {
-    let _this = this
+  mounted () {
+    const _this = this
 
-    eventHub.$on('SERVICE_UP', function(service) {
+    eventHub.$on('SERVICE_UP', function (service) {
       console.log('EVENT: Service found:', service.name)
       // TODO: Generate device UUID
-      let device = {
+      const device = {
         name: service.name,
         ip: service.referer.address,
         port: service.port,
@@ -42,35 +43,39 @@ var vm = new Vue({
         timer: null,
         interval: null,
         loading: false,
-        client: new Rpc({ url: `http://${service.referer.address}:${service.port}`, user: 'kodi'})
+        client: new Rpc({ url: `http://${service.referer.address}:${service.port}`, user: 'kodi' })
       }
 
-      _this.refresh(device).then(function() {
+      _this.refresh(device).then(function () {
         console.log('Refresh done', device.name, device.playing)
         _this.addDevice(device)
       })
     })
 
-    eventHub.$on('SERVICE_DOWN', function(service) {
+    eventHub.$on('SERVICE_DOWN', function (service) {
       console.log('EVENT: Service found:', service.name)
-      let device = new Device(service)
+      const device = {
+        name: service.name,
+        ip: service.referer.address,
+        port: service.port
+      }
       _this.removeDevice(device)
     })
   },
 
-  destroyed() {
+  destroyed () {
     console.warn('Component destroyed, clear timers')
     this.clearAllTimers()
   },
 
   watch: {
-    devices(val) {
-      if(val) {
-        if(val.length === 1) {
-          this.source = this.devices.find(function(device) {
+    devices (val) {
+      if (val) {
+        if (val.length === 1) {
+          this.source = this.devices.find(function (device) {
             console.info('DEVICES CHAGED:', device.name, device.playing)
 
-            if(device.playing) {
+            if (device.playing) {
               console.info('DEVICES CHAGED:', 'Set', device.name, 'as source')
             } else {
               console.warn('DEVICES CHAGED:', 'No playing devices')
@@ -81,46 +86,45 @@ var vm = new Vue({
 
         this.source = this.source || this.devices[0]
 
-        if(this.devices.length === 2) {
+        if (this.devices.length === 2) {
           this.target = this.targets[0]
         }
       }
     },
 
-    source(val) {
-      let _this = this
-      if(!!this.source) {
+    source (val) {
+      if (this.source) {
         this.refresh(this.source)
       }
     }
   },
 
   computed: {
-    targets() {
-      let _this = this
-      return this.devices.filter(function(device) {
-        return device.name != _this.source.name
+    targets () {
+      const _this = this
+      return this.devices.filter(function (device) {
+        return device.name !== _this.source.name
       })
     },
 
-    ready() {
+    ready () {
       return this.source && this.source.playing && this.target
     }
   },
 
   methods: {
-    findAll() {
-      let bonjour = Bonjour.find({ type: 'http' })
-      bonjour.on('up', function(service) {
-        if(service.name.includes('Kodi')) {
+    findAll () {
+      const bonjour = Bonjour.find({ type: 'http' })
+      bonjour.on('up', function (service) {
+        if (service.name.includes('Kodi')) {
           eventHub.$emit('SERVICE_UP', service)
         } else {
           console.warn('Kodi service?', service.name)
         }
       })
 
-      bonjour.on('down', function(service) {
-        if(service.name.includes('Kodi')) {
+      bonjour.on('down', function (service) {
+        if (service.name.includes('Kodi')) {
           eventHub.$emit('SERVICE_DOWN', service)
         } else {
           console.warn('Kodi service?', service.name)
@@ -128,42 +132,41 @@ var vm = new Vue({
       })
     },
 
-
-    isSourceDevice(device) {
+    isSourceDevice (device) {
       return this.source.ip === device.ip
     },
 
-    addDevice(device) {
-      let includes = this.devices.find(function(item) {
-        return item.ip == device.ip
+    addDevice (device) {
+      const includes = this.devices.find(function (item) {
+        return item.ip === device.ip
       })
 
-      if(!includes) {
+      if (!includes) {
         this.devices.push(device)
       }
     },
 
-    removeDevice(device) {
+    removeDevice (device) {
       this.devices = this.devices.filter(function (item) {
-        return item.ip != device.ip
+        return item.ip !== device.ip
       })
     },
 
-    imageExists(url, callback) {
-      var img = new Image();
-      img.onload = function() { callback(true); };
-      img.onerror = function() { callback(false); };
-      img.src = url;
+    imageExists (url, callback) {
+      var img = new Image()
+      img.onload = function () { callback(true) }
+      img.onerror = function () { callback(false) }
+      img.src = url
     },
 
-    sourceDeviceImage() {
-      let _this = this
+    sourceDeviceImage () {
+      const _this = this
 
-      if(this.source && this.source.stream) {
-        if(this.source.stream.image) {
-          let image = decodeURIComponent(this.source.stream.image.replace('image://', '').replace('.jpg/', '.jpg'))
-          this.imageExists(image, function(exists) {
-            if(exists) {
+      if (this.source && this.source.stream) {
+        if (this.source.stream.image) {
+          const image = decodeURIComponent(this.source.stream.image.replace('image://', '').replace('.jpg/', '.jpg'))
+          this.imageExists(image, function (exists) {
+            if (exists) {
               _this.source.image = image
             }
           })
@@ -171,20 +174,20 @@ var vm = new Vue({
       }
     },
 
-    rescan() {
+    rescan () {
       this.devices = []
       this.clearAllTimers()
       this.findAll()
     },
 
-    playing(device) {
-      let _this = this
-      let params = { properties: ["title", "year", "art", "rating", "runtime", "imdbnumber", "showtitle", "season", "episode", "file", "duration", "description"]}
-      device.client.player.getCurrentlyPlayingVideo(params).then(function(response) {
-        if(response && !!response.item.file) {
+    playing (device) {
+      const _this = this
+      const params = { properties: ['title', 'year', 'art', 'rating', 'runtime', 'imdbnumber', 'showtitle', 'season', 'episode', 'file', 'duration', 'description'] }
+      device.client.player.getCurrentlyPlayingVideo(params).then(function (response) {
+        if (response && !!response.item.file) {
           console.log('Info:', device.name, JSON.stringify(response))
 
-          let stream = {
+          const stream = {
             title: response.item.label,
             file: response.item.file,
             image: response.item.art.thumb
@@ -199,22 +202,21 @@ var vm = new Vue({
           device.playing = false
           device.stream = null
         }
-      }).catch(function(error) {
+      }).catch(function (error) {
         console.error(error)
       })
     },
 
-    progress(device) {
-      let _this = this
-      device.client.player.getProperties().then(function(response) {
+    progress (device) {
+      device.client.player.getProperties().then(function (response) {
         // console.log('Playback progress:', device.name, JSON.stringify(response))
         device.progress = response
         device.paused = !device.progress.speed
-      });
+      })
     },
 
-    refresh(device) {
-      let _this = this
+    refresh (device) {
+      const _this = this
       console.log('INDEX: refresh', device.name)
 
       device.loading = true
@@ -222,67 +224,67 @@ var vm = new Vue({
       return Promise.all([
         this.playing(device),
         this.progress(device)
-      ]).then(function() {
+      ]).then(function () {
         device.loading = false
 
         clearTimeout(device.timer)
-        device.timer = setTimeout(function() {
+        device.timer = setTimeout(function () {
           _this.refresh(device)
         }, 5000)
       })
     },
 
-    refreshAll() {
-      let _this = this
+    refreshAll () {
+      const _this = this
       this.clearAllTimers()
 
-      for(let i in this.devices) {
-        let device = this.devices[i]
+      for (const i in this.devices) {
+        const device = this.devices[i]
 
         _this.refresh(device)
       }
     },
 
-    clearAllTimers() {
-      for(let i in this.devices) {
+    clearAllTimers () {
+      for (const i in this.devices) {
         console.log('Clear refresh timer')
         clearTimeout(this.devices[i].timer)
       }
     },
 
-    setSource(device) {
+    setSource (device) {
       this.source = device
       this.refresh(device)
     },
 
-    setTarget(device) {
+    setTarget (device) {
       this.target = device
 
-      if(device.ip === this.source.ip) {
+      if (device.ip === this.source.ip) {
         this.source = this.targets[0]
       }
     },
 
-    toggleStreamURLForm() {
+    toggleStreamURLForm () {
       this.showStreamForm = !this.showStreamForm
     },
 
-    closeStreamURLForm() {
+    closeStreamURLForm () {
       // this.streamURL = null
       this.showStreamForm = false
     },
 
-    open() {
-      //TODO: Add loading indicator
-      let _this = this
+    open () {
+      // TODO: Add loading indicator
+      const _this = this
       this.source.loading = true
 
-      this.stop(this.source).then(function() {
-        _this.source.client.player.open({"item":{"file": _this.streamURL }}).then(function(r) {
-          console.log(r);
+      this.stop(this.source).then(function () {
+        _this.source.client.player.open({ 'item': { 'file': _this.streamURL }}).then(function (r) {
+          console.log(r)
           _this.source.loading = false
-        }).then(function() {
-          setTimeout(function() {
+        }).then(function () {
+          setTimeout(function () {
             _this.refresh(_this.source)
           }, 2000)
         })
@@ -291,60 +293,56 @@ var vm = new Vue({
       this.closeStreamURLForm()
     },
 
-    play(device) {
-      let _this = this
+    play (device) {
       device.loading = true
 
-      return device.client.player.playPause({ play: true }).then(function(r) {
+      return device.client.player.playPause({ play: true }).then(function (r) {
         device.paused = false
         device.loading = false
       })
     },
 
-    pause(device) {
-      let _this = this
+    pause (device) {
       device.loading = true
 
-      return device.client.player.playPause({ play: false }).then(function(r) {
+      return device.client.player.playPause({ play: false }).then(function (r) {
         device.paused = true
         device.loading = false
       })
     },
 
-    stop(device) {
-      let _this = this
+    stop (device) {
       device.loading = true
 
-      return device.client.player.stop().then(function(r) {
+      return device.client.player.stop().then(function (r) {
         device.playing = false
         device.stream = device.progress = null
         device.loading = false
       })
     },
 
-    backward() {
+    backward () {
       this.source.seek(10)
     },
 
-    seek() {
+    seek () {
       this.source.seek(60)
     },
 
-    sync() {
-      let _this = this
-      let item = {"file": this.source.stream.file }
-      let options = {"resume": this.source.progress.time }
+    sync () {
+      const _this = this
+      const item = { 'file': this.source.stream.file }
+      const options = { 'resume': this.source.progress.time }
 
       this.pause(this.source)
 
       this.target.loading = this.loading = true
-      this.target.client.player.open({item: item, options: options }).then(function(r) {
+      this.target.client.player.open({ item: item, options: options }).then(function (r) {
         _this.loading = false
       })
-
     },
 
-    quit() {
+    quit () {
       ipcRenderer.send('quit', 'ping')
     }
   }

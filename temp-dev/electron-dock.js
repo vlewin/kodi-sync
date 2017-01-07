@@ -4,14 +4,10 @@ const { app, BrowserWindow, ipcMain, Tray } = require('electron')
 const path = require('path')
 const assetsDirectory = path.join(__dirname, 'stream.png')
 
-let tray = undefined
-let window = undefined
+let tray
+const window
 
-console.log(app)
 // Don't show the app in the doc
-// app.dock.hide()
-
-// Creates tray & window
 app.on('ready', () => {
   createTray()
   createWindow()
@@ -30,15 +26,15 @@ const createTray = () => {
   })
 }
 
-  const getWindowPosition = () => {
-  const windowBounds = window.getBounds()
-  const trayBounds = tray.getBounds()
+const getWindowPosition = () => {
+    const windowBounds = window.getBounds()
+    const trayBounds = tray.getBounds()
 
   // Center window horizontally below the tray icon
-  const x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2))
+    const x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2))
 
   // Position window 4 pixels vertically below the tray icon
-  const y = Math.round(trayBounds.y + trayBounds.height + 3)
+    const y = Math.round(trayBounds.y + trayBounds.height + 3)
 
-  return {x: x, y: y}
-}
+    return { x: x, y: y }
+  }
