@@ -30,7 +30,7 @@
   "dependencies": {
     "bonjour": "^3.5.0",
     "jquery": "^3.1.1",
-    "node-kodi": "https://github.com/vlewin/node-kodi#getCurrentlyPlayingVideo_accepts_params_and_properties",
+    "node-kodi": "https://github.com/martinverup/node-kodi#master",
     "vue": "^2.1.7"
   }
 }
